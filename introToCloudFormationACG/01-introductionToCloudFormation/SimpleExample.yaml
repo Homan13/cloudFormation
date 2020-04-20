@@ -1,0 +1,11 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Simple stack that launches an EC2 instance with tags
+Resources:
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      ImageId: ami-0323c3dd2da7fb37d # Amazon Linux 2 AMI in N.Virginia (updated from initial course config)
+      Tags:
+        - Key: Name
+          Value: My First CF EC2 Instance
