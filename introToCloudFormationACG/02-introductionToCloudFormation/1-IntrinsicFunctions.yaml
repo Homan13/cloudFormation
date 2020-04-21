@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Simple stack that introduces intrinsic functions
+Resources:
+  Ec2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: t3.micro
+      ImageId: ami-0323c3dd2da7fb37d # Amazon Linux 2 AMI in N.Virginia (updated from initial course config)
+      Tags:
+        - Key: "Name"
+          Value: !Join [ " ", [ EC2, Instance, with, Fn, Join ] ]
+          # Join - appends a set of values into one single value
+          # " " - delimiter
+          # [ EC2, Instance, with, Fn, Join ] - comma-delimited values
+          # Above example - Delimiter is a space, with the included values. Expected Tag value should
+          # be EC2 Instance with Fn Join
