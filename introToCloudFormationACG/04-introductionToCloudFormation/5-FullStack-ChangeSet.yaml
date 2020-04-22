@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates an auto-scaling web server group behind an ALB
+Parameters:
+  myKeyPair: 
+    Description: Amazon EC2 Key Pair
+    Type: AWS::EC2::KeyPair::KeyName
+  VpcId:
+    Description: Enter the VpcId
+    Type: AWS::EC2::VPC::Id
+  SubnetIds:
+    Description: Enter the Subnets
+    Type: List<AWS::EC2::Subnet::Id>
+Mappings: # Amazon Linux 2 AMI in each region (updated from initial course config)
+  RegionMap: # Updated from initial course config, added us-east-2 and us-west-2, removed EU and AP regions
+    us-east-1:
+      AMI: ami-0323c3dd2da7fb37d
+    us-east-2:
+      AMI: ami-0f7919c33c90f5b58
+    us-west-1:
+      AMI: ami-06fcc1f0bc2c8943f
+    us-west-2:
+      AMI: ami-0d6621c01e8c2de2c
+Resources:
+  LoadBalancer: # Application Load Balancer
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Subnets: !Ref SubnetIds
+  LoadBalancerListener: # Port 80 Listener for ALB
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: TargetGroup
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones: !GetAZs
+      LaunchConfigurationName: !Ref LaunchConfiguration
+      MinSize: 1
+      MaxSize: 3
+      TargetGroupARNs: 
+        - !Ref TargetGroup
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata: 
+      Comment: Install php and httpd
+      AWS::CloudFormation::Init:
+        config: 
+          packages: 
+            yum:
+              httpd: []
+              php: []
+          files: 
+            /var/www/html/index.php:
+              content: !Sub |
+                <?php print "Hello world Abs was here!"; ?>
+          services: 
+            sysvinit:
+              httpd:
+                enabled: true
+                ensureRunning: true
+    Properties:
+      KeyName: !Ref myKeyPair
+      InstanceType: t3.micro
+      SecurityGroups:
+        - !Ref EC2SecurityGroup
+      ImageId:
+        Fn::FindInMap:
+        - RegionMap
+        - !Ref AWS::Region
+        - AMI
+      UserData:
+        'Fn::Base64': 
+          !Sub |
+            #!/bin/bash -xe                        
+            # Ensure AWS CFN Bootstrap is the latest
+            yum install -y aws-cfn-bootstrap
+            # Install the files and packages from the metadata
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB Security Group
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+  EC2SecurityGroup: 
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 Instance
+      VpcId: !Ref VpcId
+  EC2InboundRule: # EC2 can only accept traffic from ALB
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      SourceSecurityGroupId:
+        !GetAtt
+        - ALBSecurityGroup
+        - GroupId
+      GroupId:
+        !GetAtt
+        - EC2SecurityGroup
+        - GroupId
+Outputs:
+  PublicDns:
+    Description: The Public DNS
+    Value: !Sub 'http://${LoadBalancer.DNSName}'
