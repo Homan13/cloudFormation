@@ -54,7 +54,7 @@ systemctl status amazon-ssm-agent
 # Install Sophos AV for Linux
 echo Installing Sophos anti-virus for Linux
 cd ~
-aws s3 cp s3://cssg-sndbx-ami-artifacts/sav-linux-free-9.tgz sav-linux-free-9.tgz &&
+aws s3 cp s3://cf-imagebuilder-demo/sav-linux-free-9.tgz sav-linux-free-9.tgz &&
 tar xvzf sav-linux-free-9.tgz
 cd sophos-av &&
 ./install.sh --automatic --acceptlicense /opt/sophos-av &&
@@ -63,7 +63,5 @@ cd sophos-av &&
 echo Removing all installation packages
 rm -rf ~/install &&
 rm -rf /tmp/ssm &&
-rm -rf /tmp/NessusAgent-7.6.1-amzn.x86_64.rpm &&
 rm -rf ~/sav-linux-free-9.tgz &&
 rm -rf ~/sophos-av &&
-rm -rf /tmp/splunkforwarder-6.5.2-67571ef4b87d-linux-2.6-x86_64.rpm
