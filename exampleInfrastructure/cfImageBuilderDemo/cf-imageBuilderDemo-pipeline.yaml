@@ -1,0 +1,12 @@
+Resources:
+  AL2GoldenImagePipeline:
+    Type: 'AWS::ImageBuilder::ImagePipeline'
+    Properties:
+      Name: 'Amazon Linux 2 AMI Golden Image Pipeline'
+      Description: 'Test pipeline for Amazon Linux 2 Gold Image created with CloudFormation'
+      ImageRecipeArn: arn:aws:imagebuilder:us-east-1:033562487398:image-recipe/amazon-linux-2-golden-ami/2.0.0
+      InfrastructureConfigurationArn: arn:aws:imagebuilder:us-east-1:033562487398:infrastructure-configuration/al2-infrastructure-config
+      ImageTestsConfiguration:
+        ImageTestsEnabled: false
+        TimeoutMinutes: 90
+      Status: 'ENABLED'

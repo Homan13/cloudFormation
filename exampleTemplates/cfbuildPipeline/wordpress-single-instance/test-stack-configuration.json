@@ -1,0 +1,9 @@
+{
+  "Parameters" : {
+    "DBName" : "TestWordPressDB",
+    "DBPassword" : "Password12345",
+    "DBRootPassword" : "Password12345",
+    "DBUser" : "TestDBuser",    
+    "KeyName" : "cf-pipeline-test"
+  }
+}

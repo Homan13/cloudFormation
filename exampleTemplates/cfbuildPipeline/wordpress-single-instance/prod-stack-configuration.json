@@ -1,0 +1,9 @@
+{
+  "Parameters" : {
+    "DBName" : "ProdWordPressDB",
+    "DBPassword" : "Password12345",
+    "DBRootPassword" : "Password12345",
+    "DBUser" : "ProdDBuser",    
+    "KeyName" : "cf-pipeline-prod"
+  }
+}

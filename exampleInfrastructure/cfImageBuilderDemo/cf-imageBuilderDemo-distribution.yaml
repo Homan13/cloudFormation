@@ -1,0 +1,17 @@
+Resources:
+  AL2DistributionConfiguration:
+    Type: 'AWS::ImageBuilder::DistributionConfiguration'
+    Properties:
+      Name: 'al2-distribution-configuration'
+      Description: 'Test distribution configuration for Amazon Linux 2 Gold Image created with CloudFormation'
+      Distributions:
+        - Region: 'us-east-1'
+          AmiDistributionConfiguration:
+            Name: 'al2-distribution-test'
+            AmiTags:
+              AmiTagKey: 'al2-distribution-test'
+            LaunchPermissionConfiguration:
+              UserGroups:
+                - 'Admins'
+              UserIds:
+                - ''

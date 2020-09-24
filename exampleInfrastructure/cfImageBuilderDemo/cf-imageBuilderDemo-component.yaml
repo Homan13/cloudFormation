@@ -1,0 +1,39 @@
+Resources:
+  DemoBootstrapComponent:
+    Type: 'AWS::ImageBuilder::Component'
+    Properties:
+      Name: 'bldr-linuxDemo-bootstrap'
+      Platform: 'Linux'
+      Version: '0.0.1'
+      Description: 'Self-managed demo component'
+      ChangeDescription: 'Initial release'
+      Data: |
+        name: Image Builder AMI Demo Component
+        description: Self-managed Instance Builder component to apply bootstrap script for Image Builder demo
+        schemaVersion: 1.0
+
+        phases:
+          - name: build
+            steps:
+              - name: DownloadBootstrap
+                action: S3Download
+                onFailure: Abort
+                maxAttempts: 3
+                inputs:
+                  - source: s3://cssg-sndbx-ami-artifacts/cssgAmazonLinux2-bootstrap.sh
+                    destination: /home/ec2-user/cssgAmazonLinux2-bootstrap.sh
+              - name: RunBootstrap
+                action: ExecuteBash
+                onFailure: Abort
+                maxAttempts: 3
+                inputs:
+                  commands:
+                    - 'chmod +x {{ build.DownloadBootstrap.inputs[0].destination }}'
+                    - 'bash {{ build.DownloadBootstrap.inputs[0].destination }}'
+              - name: InstanceCleanUp
+                action: ExecuteBash
+                onFailure: Abort
+                maxAttempts: 3
+                inputs:
+                  commands:
+                    - 'rm {{ build.DownloadBootstrap.inputs[0].destination }}'

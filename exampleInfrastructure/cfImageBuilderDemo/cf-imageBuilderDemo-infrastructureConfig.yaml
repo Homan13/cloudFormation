@@ -1,0 +1,14 @@
+Resources:
+  AL2InfrastructureConfiguration:
+    Type: 'AWS::ImageBuilder::InfrastructureConfiguration'
+    Properties:
+      Name: 'al2-infrastructure-config'
+      InstanceProfileName: 'imageBuilder-ec2-role'
+      Description: 'Test Infrastructure Configuration for Amazon Linux 2 Gold Image created with CloudFormation'
+      InstanceTypes: 
+        - 't3.medium'
+      KeyPair: 'acsg-linux'
+      TerminateInstanceOnFailure: true
+      SecurityGroupIds: 
+        - 'sg-00c3f1b5d006d3d51'
+      SubnetId: 'subnet-063ae1c5ace129151'
