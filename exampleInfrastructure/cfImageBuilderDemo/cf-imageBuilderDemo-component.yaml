@@ -4,7 +4,7 @@ Resources:
     Properties:
       Name: 'bldr-linuxDemo-bootstrap'
       Platform: 'Linux'
-      Version: '0.0.1'
+      Version: '1.0.0'
       Description: 'Self-managed demo component'
       ChangeDescription: 'Initial release'
       Data: |
@@ -20,8 +20,8 @@ Resources:
                 onFailure: Abort
                 maxAttempts: 3
                 inputs:
-                  - source: s3://cssg-sndbx-ami-artifacts/cssgAmazonLinux2-bootstrap.sh
-                    destination: /home/ec2-user/cssgAmazonLinux2-bootstrap.sh
+                  - source: s3://s3-imgbldr-cfn-demo-bucket/imgBldr-AmazonLinux2-bootstrap.sh
+                    destination: /home/ec2-user/imgBldr-AmazonLinux2-bootstrap.sh
               - name: RunBootstrap
                 action: ExecuteBash
                 onFailure: Abort

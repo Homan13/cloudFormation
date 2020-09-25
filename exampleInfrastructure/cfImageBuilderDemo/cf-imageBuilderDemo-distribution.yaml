@@ -1,17 +1,15 @@
 Resources:
-  AL2DistributionConfiguration:
+  ImgBldrDemoDistributionConfiguration:
     Type: 'AWS::ImageBuilder::DistributionConfiguration'
     Properties:
-      Name: 'al2-distribution-configuration'
-      Description: 'Test distribution configuration for Amazon Linux 2 Gold Image created with CloudFormation'
+      Name: 'imgbldr-demo-distroConfig'
+      Description: 'Image Builder demo distribution configuration'
       Distributions:
         - Region: 'us-east-1'
           AmiDistributionConfiguration:
-            Name: 'al2-distribution-test'
+            Name: 'demo-imgBldr-ami {{ imagebuilder:buildDate }}'
             AmiTags:
-              AmiTagKey: 'al2-distribution-test'
+              AmiTagKey: 'imgBldr-demo-test'
             LaunchPermissionConfiguration:
-              UserGroups:
-                - 'Admins'
               UserIds:
-                - ''
+                - '{insert AWS account number here}'

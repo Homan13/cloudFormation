@@ -1,12 +1,12 @@
 Resources:
-  AL2GoldenAMIRecipe:
+  ImageBuilderDemoRecipe:
     Type: 'AWS::ImageBuilder::ImageRecipe'
     Properties:
-      Name: 'Amazon Linux 2 Golden AMI'
-      Version: '2.0.0'
+      Name: 'Image Builder Demo Recipe'
+      Version: '1.0.0'
       ParentImage: 'arn:aws:imagebuilder:us-east-1:aws:image/amazon-linux-2-x86/2020.9.4'
-      Description: 'Test recipe for Amazon Linux 2 Gold Image created with CloudFormation'
+      Description: 'Test recipe for Amazon Linux 2 Gold Image created with CloudFormation for blog demo'
       Components:
         - ComponentArn: arn:aws:imagebuilder:us-east-1:aws:component/update-linux/1.0.0/1
-        - ComponentArn: arn:aws:imagebuilder:us-east-1:033562487398:component/bldr-amazonlinux2-bootstrap/2.0.0/1
+        - ComponentArn: {insert component ARN here after creating}
         - ComponentArn: arn:aws:imagebuilder:us-east-1:aws:component/stig-build-linux-medium/2.6.0/1
