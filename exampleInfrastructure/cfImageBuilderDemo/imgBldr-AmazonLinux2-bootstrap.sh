@@ -13,33 +13,6 @@ source /root/.bash_profile &&
 export PATH=/home/ec2-user/.local/bin:$PATH &&
 source /home/ec2-user/.bash_profile &&
 
-# Configure the AWS CLI
-## Create an AWS CLI credentials and config file
-echo Creating an AWS CLI credentials and config file
-mkdir /home/ec2-user/.aws
-chown -R ec2-user: /home/ec2-user/.aws
-cat <<'EOF' > /home/ec2-user/.aws/credentials
-[default]
-aws_access_key=
-aws_secret_access_key=
-EOF
-cat <<'EOF' > /home/ec2-user/.aws/config
-[default]
-region=us-east-1
-output=json
-EOF
-mkdir /root/.aws
-cat <<'EOF' > /root/.aws/credentials
-[default]
-aws_access_key=
-aws_secret_access_key=
-EOF
-cat <<'EOF' > /root/.aws/config
-[default]
-region=us-east-1
-output=json
-EOF
-
 # Install the AWS Agent for Amazon Inspector
 echo Installing the AWS agent for Amazon Inspector
 wget https://d1wk0tztpsntt1.cloudfront.net/linux/latest/install &&
