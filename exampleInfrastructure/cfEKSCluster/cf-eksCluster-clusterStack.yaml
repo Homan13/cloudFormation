@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template will deploy an EKS cluster in a CSSG managed environment
+
+Parameters:
+  EksVpc:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID to use for the EKS cluster, the LB policy needs to reference this VPC
+    Default: vpc-074dd12a38bf41e3d
+  ClusterName:
+    Type: String
+    Description: Desired name for the EKS cluster
+    Default: cssg-eks-cluster
+  IAMRoleARN:
+    Type: String
+    Description: ARN of the IAM role created for the cluster in the EKS IAM stack
+  VpcSecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security Group to attach to the Cluster to allow VPC communication
+    Default: sg-00c3f1b5d006d3d51
+  ClusterSubnet1:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet 1 ID to use for the EKS cluster
+    Default: subnet-03b818ccec4003ef8
+  ClusterSubnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet 2 ID to use for the EKS cluster
+    Default: subnet-063ae1c5ace129151
+
+Resources:
+  ClusterControlPlaneSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows cluster communication between cluster and worker nodes
+      VpcId:
+        Ref: EksVpc
+  Cluster:
+    Type: "AWS::EKS::Cluster"
+    Properties:
+      Name: !Ref ClusterName
+      Version: "1.19"
+      RoleArn: !Ref IAMRoleARN
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+          - !Ref ClusterControlPlaneSecurityGroup
+          - !Ref VpcSecurityGroup
+        SubnetIds:
+          - !Ref ClusterSubnet1
+          - !Ref ClusterSubnet2
+
+Outputs:
+  ClusterName:
+    Value: !Ref Cluster
+    Description: Name of the EKS cluster
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-ClusterName"
+  ClusterArn:
+    Value: !GetAtt Cluster.Arn
+    Description: Arn of the EKS cluster
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-ClusterArn"
+  ClusterEndpoint:
+    Value: !GetAtt Cluster.Endpoint
+    Description: Endpoint URL for the EKS cluster
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-ClusterEndpoint"
+  ClusterControlPlaneSecurityGroup:
+    Value: !Ref ClusterControlPlaneSecurityGroup
+  ClusterStackName:
+    Value: !Ref AWS::StackName

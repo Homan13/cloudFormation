@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template will deploy a managed VPC for an EKS cluster and node-group in your environment
+Parameters:
+  AvailabilityZones:
+    Description: 'List of Availability Zones to use for the subnets in the VPC. Note: The logical order is preserved.'
+    Type: List<AWS::EC2::AvailabilityZone::Name>
+    Default: 'us-east-1a, us-east-1b'
+  CreateAdditionalPrivateSubnets:
+    AllowedValues:
+    - 'true'
+    - 'false'
+    Default: 'false'
+    Description: Set to true to create a network ACL protected subnet in each Availability
+      Zone. If false, the CIDR parameters for those subnets will be ignored. If true,
+      it also requires that the 'Create private subnets' parameter is also true to
+      have any effect.
+    Type: String
+  CreatePrivateSubnets:
+    AllowedValues:
+    - 'true'
+    - 'false'
+    Default: 'false'
+    Description: Set to false to create only public subnets. If false, the CIDR parameters
+      for ALL private subnets will be ignored.
+  NumberOfAZs:
+    AllowedValues:
+    - '2'
+    - '3'
+    - '4'
+    Default: '2'
+    Description: Number of Availability Zones to use in the VPC. This must match yourselections in the list of Availability 
+      Zones parameter.
+    Type: String
+  PrivateSubnet1Range:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    

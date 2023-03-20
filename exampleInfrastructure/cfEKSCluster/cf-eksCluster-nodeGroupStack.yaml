@@ -1,0 +1,245 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template will deploy an EKS node group in a CSSG managed environment
+
+Parameters:
+  ClusterControlPlaneSecurityGroup:
+    Type: String
+    Description: EKS Cluster control plane security group ID
+    Default: ClusterControlPlaneSecurityGroup
+  ClusterName:
+    Type: String
+    Description: The name of the EKS cluster. Nodes will not be able to join the cluster if it is incorrect
+    Default: cssgTest-eks-cluster
+  KeyName:
+    Description: The EC2 key pair to allow ssh access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: acsg-linux
+  VpcSecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security Group to attach to the Cluster to allow VPC communication
+    Default: sg-00c3f1b5d006d3d51
+  EksVpc:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID to use for the EKS cluster, the LB policy needs to reference this VPC
+    Default: vpc-074dd12a38bf41e3d
+  NodeAmiType:
+    Type: String
+    Description: AMI type to be used for your cluster nodes
+    Default: AL2_x86_64
+    AllowedValues:
+    - AL2_x86_64
+    - AL2_x86_64_GPU
+    - AL2_ARM_64
+  NodeInstanceType:
+    Description: EC2 instance type for the node instances
+    Type: String
+    Default: t3.medium
+    AllowedValues:
+    - t3.small
+    - t3.medium
+    - t3.large
+    - t3.xlarge
+    - t3.2xlarge
+    - m5.large
+    - m5.xlarge
+    - m5.2xlarge
+    - m5.4xlarge
+    - m5.12xlarge
+    - m5.24xlarge
+    - c5.large
+    - c5.xlarge
+    - c5.2xlarge
+    - c5.4xlarge
+    - c5.9xlarge
+    - c5.18xlarge
+    - i3.large
+    - i3.xlarge
+    - i3.2xlarge
+    - i3.4xlarge
+    - i3.8xlarge
+    - i3.16xlarge
+    - r4.large
+    - r4.xlarge
+    - r4.2xlarge
+    - r4.4xlarge
+    - r4.8xlarge
+    - r4.16xlarge
+    - x1.16xlarge
+    - x1.32xlarge
+    - p3.2xlarge
+    - p3.8xlarge
+    - p3.16xlarge
+    ConstraintDescription: must be a valid EC2 instance type
+  NodeGroupASGMin:
+    Type: Number
+    Description: Minimum number of EC2 instances to launch into the node group
+    Default: 2
+  NodeGroupASGDesired:
+    Type: Number
+    Description: Steady state number of EC2 instance that should be running in the node group
+    Default: 2
+  NodeGroupASGMax:
+    Type: Number
+    Description: Maximum number of instances that will launch in the node group
+    Default: 4
+  ClusterSubnet1:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet 1 ID to use for the EKS cluster
+    Default: subnet-03b818ccec4003ef8
+  ClusterSubnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet 2 ID to use for the EKS cluster
+    Default: subnet-063ae1c5ace129151
+  NodeRole:
+    Type: String
+    Description: ARN of the node group role created in the IAM stack
+    Default: NodeRole
+  NodeGroupName:
+    Type: String
+    Description: Unique name of the node group
+    Default: cssg-test-eksCluster-nodeGroup
+
+Mappings:
+  MaxPodsPerNode:
+    c5.large:
+      MaxPods: 29
+    c5.xlarge:
+      MaxPods: 58
+    c5.2xlarge:
+      MaxPods: 58
+    c5.4xlarge:
+      MaxPods: 234
+    c5.9xlarge:
+      MaxPods: 234
+    c5.18xlarge:
+      MaxPods: 737
+    i3.large:
+      MaxPods: 29
+    i3.xlarge:
+      MaxPods: 58
+    i3.2xlarge:
+      MaxPods: 58
+    i3.4xlarge:
+      MaxPods: 234
+    i3.8xlarge:
+      MaxPods: 234
+    i3.16xlarge:
+      MaxPods: 737
+    m5.large:
+      MaxPods: 29
+    m5.xlarge:
+      MaxPods: 58
+    m5.2xlarge:
+      MaxPods: 58
+    m5.4xlarge:
+      MaxPods: 234
+    m5.12xlarge:
+      MaxPods: 234
+    m5.24xlarge:
+      MaxPods: 737
+    p3.2xlarge:
+      MaxPods: 58
+    p3.8xlarge:
+      MaxPods: 234
+    p3.16xlarge:
+      MaxPods: 234
+    r4.large:
+      MaxPods: 29
+    r4.xlarge:
+      MaxPods: 58
+    r4.2xlarge:
+      MaxPods: 58
+    r4.4xlarge:
+      MaxPods: 234
+    r4.8xlarge:
+      MaxPods: 234
+    r4.16xlarge:
+      MaxPods: 737
+    t3.small:
+      MaxPods: 8
+    t3.medium:
+      MaxPods: 17
+    t3.large:
+      MaxPods: 35
+    t3.xlarge:
+      MaxPods: 44
+    t3.2xlarge:
+      MaxPods: 44
+    x1.16xlarge:
+      MaxPods: 234
+    x1.32xlarge:
+      MaxPods: 234
+
+Resources:
+  NodeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group to attach to all nodes in the EKS cluster
+      VpcId: !Ref EksVpc
+      Tags:
+      - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
+        Value: 'owned'
+  NodeSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow cluster nodes to communicate with each other
+      GroupId: !Ref NodeSecurityGroup
+      SourceSecurityGroupId: !Ref NodeSecurityGroup
+      IpProtocol: '-1'
+      FromPort: 0
+      ToPort: 65535
+  NodeSecurityGroupFromControlPlaneIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow worker Kubelets and pods to communicate with cluster control plane
+      GroupId: !Ref NodeSecurityGroup
+      SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroup
+      IpProtocol: tcp
+      FromPort: 1025
+      ToPort: 65535
+  ControlPlaneEgressToNodeSecurityGroup:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: Allow the cluster control plane to communicate with worker Kubelet and pods
+      GroupId: !Ref ClusterControlPlaneSecurityGroup
+      DestinationSecurityGroupId: !Ref NodeSecurityGroup
+      IpProtocol: tcp
+      FromPort: 1025
+      ToPort: 65535
+  ClusterControlPlaneSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow pods to communicate with cluster API server
+      GroupId: !Ref ClusterControlPlaneSecurityGroup
+      SourceSecurityGroupId: !Ref NodeSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+  NodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties: 
+      AmiType: !Ref NodeAmiType
+      CapacityType: ON_DEMAND
+      ClusterName: !Ref ClusterName
+      ForceUpdateEnabled: no
+      InstanceTypes: 
+        - !Ref NodeInstanceType
+      NodegroupName: !Ref NodeGroupName
+      NodeRole: !Ref NodeRole
+      RemoteAccess: 
+        Ec2SshKey: !Ref KeyName
+        SourceSecurityGroups:
+          - !Ref ClusterControlPlaneSecurityGroup
+          - !Ref VpcSecurityGroup
+      ScalingConfig: 
+        DesiredSize: !Ref NodeGroupASGDesired
+        MaxSize: !Ref NodeGroupASGMax
+        MinSize: !Ref NodeGroupASGMin
+      Subnets: 
+        - !Ref ClusterSubnet1
+        - !Ref ClusterSubnet2
+
+# Outputs:
+#   NodeInstanceRole:
+#     Description: Instance role for the node group instances
+#     Value: !GetAtt NodeInstanceRole.Arn

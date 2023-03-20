@@ -1,0 +1,244 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This template will deploy the required roles and policies for an EKS cluster and node-group in your environment
+
+Parameters:
+  LBPolicyName:
+    Type: String
+    Description: Name for the customer managed EKS Loadbalancing policy name
+    Default: eks-loadBalancing
+  IngressPolicyName:
+    Type: String
+    Description: Name for the customer managed EKS Ingress Controller policy name
+    Default: eks-albIngressControllerPolicy
+  EksVpc:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID to use for the EKS cluster, the LB policy needs to reference this VPC
+    Default: vpc-074dd12a38bf41e3d
+  ClusterRoleName:
+    Type: String
+    Description: Name for the customer managed EKS Cluster role
+    Default: eks-cluster-role
+  NodeGroupRoleName:
+    Type: String
+    Description: Name for the customer managed EKS Node Group role
+    Default: eks-nodeGroup-role
+  AmazonEKSClusterPolicy:
+    Type: String
+    Description: ARN of the AWS managed AmazonEKSClusterPolicy policy to add to EKS Cluster role
+    Default: arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+  AmazonEKSWorkerNodePolicy:
+    Type: String
+    Description: ARN of the AWS managed AmazonEKSWorkerNodePolicy policy to add to EKS Cluster role
+    Default: arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+  AmazonEKSServicePolicy:
+    Type: String
+    Description: ARN of the AWS managed AmazonEKSServicePolicy policy to add to EKS Cluster role
+    Default: arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+  AmazonEKSCNIPolicy:
+    Type: String
+    Description: ARN of the AWS managed AmazonEKS_CNI_Policy policy to add to EKS Cluster role
+    Default: arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+  AmazonEC2ContainerRegistryReadOnly:
+    Type: String
+    Description: ARN of the AWS managed AmazonEC2ContainerRegistryReadOnly policy to add to EKS Cluster role
+    Default: arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+
+Resources:
+  LoadBalancingPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: 
+        Ref: LBPolicyName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: 'elasticloadbalancing:*'
+            Resource:
+              - Fn::Sub: 'arn:aws:ec2:*:*:vpc/${EksVpc}'
+              - Fn::Sub: 'arn:aws:eks:us-east-1:${AWS::AccountId}:cluster/*'
+          - Effect: Allow
+            Action:
+              - 'ec2:DescribeAccountAttributes'
+              - 'ec2:DescribeAddresses'
+              - 'ec2:DescribeInternetGateways'
+              - 'ec2:DescribeSecurityGroups'
+              - 'ec2:DescribeSubnets'
+              - 'ec2:DescribeVpcs'
+              - 'ec2:DescribeVpcClassicLink'
+              - 'ec2:DescribeInstances'
+              - 'ec2:DescribeClassicLinkInstances'
+            Resource: '*'
+          - Effect: 'Allow'
+            Action: 'iam:CreateServiceLinkedRole'
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'iam:AWSServiceName': elasticloadbalancing.amazonaws.com
+  IngressControllerPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName:
+        Ref: IngressPolicyName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'acm:DescribeCertificate'
+              - 'acm:ListCertificates'
+              - 'acm:GetCertificate'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'ec2:AuthorizeSecurityGroupIngress'
+              - 'ec2:CreateSecurityGroup'
+              - 'ec2:CreateTags'
+              - 'ec2:DeleteTags'
+              - 'ec2:DeleteSecurityGroup'
+              - 'ec2:DescribeAccountAttributes'
+              - 'ec2:DescribeAddresses'
+              - 'ec2:DescribeInstances'
+              - 'ec2:DescribeInstanceStatus'
+              - 'ec2:DescribeInternetGateways'
+              - 'ec2:DescribeNetworkInterfaces'
+              - 'ec2:DescribeSecurityGroups'
+              - 'ec2:DescribeSubnets'
+              - 'ec2:DescribeTags'
+              - 'ec2:DescribeVpcs'
+              - 'ec2:ModifyInstanceAttribute'
+              - 'ec2:ModifyNetworkInterfaceAttribute'
+              - 'ec2:RevokeSecurityGroupIngress'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'elasticloadbalancing:AddListenerCertificates'
+              - 'elasticloadbalancing:AddTags'
+              - 'elasticloadbalancing:CreateListener'
+              - 'elasticloadbalancing:CreateLoadBalancer'
+              - 'elasticloadbalancing:CreateRule'
+              - 'elasticloadbalancing:CreateTargetGroup'
+              - 'elasticloadbalancing:DeleteListener'
+              - 'elasticloadbalancing:DeleteLoadBalancer'
+              - 'elasticloadbalancing:DeleteRule'
+              - 'elasticloadbalancing:DeleteTargetGroup'
+              - 'elasticloadbalancing:DeregisterTargets'
+              - 'elasticloadbalancing:DescribeListenerCertificates'
+              - 'elasticloadbalancing:DescribeListeners'
+              - 'elasticloadbalancing:DescribeLoadBalancers'
+              - 'elasticloadbalancing:DescribeLoadBalancerAttributes'
+              - 'elasticloadbalancing:DescribeRules'
+              - 'elasticloadbalancing:DescribeSSLPolicies'
+              - 'elasticloadbalancing:DescribeTags'
+              - 'elasticloadbalancing:DescribeTargetGroups'
+              - 'elasticloadbalancing:DescribeTargetGroupAttributes'
+              - 'elasticloadbalancing:DescribeTargetHealth'
+              - 'elasticloadbalancing:ModifyListener'
+              - 'elasticloadbalancing:ModifyLoadBalancerAttributes'
+              - 'elasticloadbalancing:ModifyRule'
+              - 'elasticloadbalancing:ModifyTargetGroup'
+              - 'elasticloadbalancing:ModifyTargetGroupAttributes'
+              - 'elasticloadbalancing:RegisterTargets'
+              - 'elasticloadbalancing:RemoveListenerCertificates'
+              - 'elasticloadbalancing:RemoveTags'
+              - 'elasticloadbalancing:SetIpAddressType'
+              - 'elasticloadbalancing:SetSecurityGroups'
+              - 'elasticloadbalancing:SetSubnets'
+              - 'elasticloadbalancing:SetWebACL'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'iam:CreateServiceLinkedRole'
+              - 'iam:GetServerCertificate'
+              - 'iam:ListServerCertificates'
+              - 'iam:ListOpenIDConnectProviders'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'waf-regional:GetWebACLForResource'
+              - 'waf-regional:GetWebACL'
+              - 'waf-regional:AssociateWebACL'
+              - 'waf-regional:DisassociateWebACL'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'tag:GetResources'
+              - 'tag:TagResources'
+            Resource: '*'
+          - Effect: Allow
+            Action: 'waf:GetWebACL'
+            Resource: '*'       
+  ClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Ref: ClusterRoleName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - eks.amazonaws.com
+            Action: 
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Ref AmazonEKSClusterPolicy
+        - !Ref AmazonEKSWorkerNodePolicy
+        - !Ref AmazonEKSServicePolicy
+        - !Ref AmazonEKSCNIPolicy
+        - !Ref AmazonEC2ContainerRegistryReadOnly
+        - !Ref LoadBalancingPolicy
+  NodeGroupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        Ref: NodeGroupRoleName
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Ref AmazonEKSClusterPolicy
+        - !Ref AmazonEKSWorkerNodePolicy
+        - !Ref AmazonEKSServicePolicy
+        - !Ref AmazonEKSCNIPolicy
+        - !Ref AmazonEC2ContainerRegistryReadOnly
+        - !Ref IngressControllerPolicy
+
+Outputs:
+  LBPolicyArn:
+    Value: !Ref LoadBalancingPolicy
+    Description: EKS load balancing policy ARN
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-LBPolicyArn"
+  ControllerPolicyArn:
+    Value: !Ref IngressControllerPolicy
+    Description: EKS ingress controller policy ARN
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-ControllerPolicyArn"
+  ClusterRoleName:
+    Value: !Ref ClusterRole
+    Description: EKS cluster role name
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-ClusterRoleName"
+  NodeGroupRoleName:
+    Value: !Ref NodeGroupRole
+    Description: EKS node group role name
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-NodeGroupRoleName"
+  ClusterRoleArn:
+    Value: !GetAtt ClusterRole.Arn
+  NodeGroupRoleArn:
+    Value: !GetAtt NodeGroupRole.Arn
+  IamStackName:
+    Value: !Ref AWS::StackName
