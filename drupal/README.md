@@ -6,7 +6,7 @@ A collection of CloudFormation templates to provision and manage Wordpress on AW
 
 This repository contains the following projects;
 
-**SingleInstanceDrupal** - This project contains templates to launch a single Amazon Linux 2 (AL2) Elastic Compute Cloud (EC2) instance and configure a Drupal enabled LAMP stack as a web server and database serving up the site. Currently includes templates for Amazon Linux 2 (AL2), Red Hat Enterprise Linux (RHEL) 9 and Ubuntu 22.04 with more to come. These templates are meant to be used for anyone looking to familiarize themselves with automated provisioning of Drupal infrastructure in AWS using CloudFormation.
+**SingleInstanceDrupal** - This project contains templates to launch a single Elastic Compute Cloud (EC2) instance and configure a Drupal enabled LAMP stack as a web server and database serving up the site. Currently includes templates for Amazon Linux 2 (AL2), Amazon Linux 2023 (AL2023), Red Hat Enterprise Linux (RHEL) 9 and Ubuntu 22.04 with more to come. These templates are meant to be used for anyone looking to familiarize themselves with automated provisioning of Drupal infrastructure in AWS using CloudFormation.
 
 These templates should be ready to launch with no changes required. Just download, and either store on your local system or in an S3 bucket. They can then be run directly from the CloudFormation console pointing at whichever location you've decided to run them from.
 

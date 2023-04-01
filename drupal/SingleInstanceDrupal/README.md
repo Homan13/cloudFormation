@@ -6,11 +6,13 @@ A collection of CloudFormation templates to provision and manage Drupal on a sin
 
 This repository contains the following projects;
 
-**cf-drupal-singleinstance-al2.yaml** - This template will launch a single Amazon Linux 2 (AL2) Elastic Compute Cloud (EC2) instance and configure a Drupal enabled LAMP stack as a web server and database serving up the site. This stack is running the following software versions; Drupal 10.0.x, Apache 2.4.x, MariaDB 10.5.x (AL2), MariaDB 10.6.x (Ubuntu and RHEL) and PHP 8.1.x.
+**cf-drupal-singleinstance-al2.yaml** - This template will launch a single Amazon Linux 2 (AL2) Elastic Compute Cloud (EC2) instance and configure a Drupal enabled LAMP stack as a web server and database serving up the site. This stack is running the following software versions; Drupal 10.0.x, Apache 2.4.x, MariaDB 10.5.x and PHP 8.1.x.
 
-**cf-drupal-singleinstance-rhel.yaml** - This template will launch a single Red Hat Enterprise Linux (RHEL) 9 Elastic Compute Cloud (EC2) instance and configure a Drupal enabled LAMP stack as a web server and database serving up the site. This stack is running the following software versions; Drupal 10.0.x, Apache 2.4.x, MariaDB 10.5.x (AL2), MariaDB 10.6.x (Ubuntu and RHEL) and PHP 8.1.x.
+**cf-drupal-singleinstance-al2023.yaml** - This template will launch a single Amazon Linux 2023 (AL2023) Elastic Compute Cloud (EC2) instance and configure a Drupal enabled LAMP stack as a web server and database serving up the site. This stack is running the following software versions; Drupal 10.0.x, Apache 2.4.x, MariaDB 10.5.x, and PHP 8.1.x.
 
-**cf-drupal-singleinstance-ubuntu.yaml** - This template will launch a single Ubuntu 22.04 Elastic Compute Cloud (EC2) instance and configure a Drupal enabled LAMP stack as a web server and database serving up the site. This stack is running the following software versions; Drupal 10.0.x, Apache 2.4.x, MariaDB 10.5.x (AL2), MariaDB 10.6.x (Ubuntu and RHEL) and PHP 8.1.x.
+**cf-drupal-singleinstance-rhel.yaml** - This template will launch a single Red Hat Enterprise Linux (RHEL) 9 Elastic Compute Cloud (EC2) instance and configure a Drupal enabled LAMP stack as a web server and database serving up the site. This stack is running the following software versions; Drupal 10.0.x, Apache 2.4.x, MariaDB 10.6.x and PHP 8.1.x.
+
+**cf-drupal-singleinstance-ubuntu.yaml** - This template will launch a single Ubuntu 22.04 Elastic Compute Cloud (EC2) instance and configure a Drupal enabled LAMP stack as a web server and database serving up the site. This stack is running the following software versions; Drupal 10.0.x, Apache 2.4.x, MariaDB 10.6.x and PHP 8.1.x.
 
 ### Prerequisites
 
