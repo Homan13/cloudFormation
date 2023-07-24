@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: 'Cloudformation stack that launches a single instance running the Wordpress stack on Ubuntu 22.04'
 Parameters:
-  SandboxVPC:
+  WordpressVPC:
     Type: AWS::EC2::VPC::Id
     Description: 'VPC to use for SecurityGroup'
   SQLRootPass:
@@ -42,7 +42,7 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     Description: 'SSH keypair name for access to EC2 instance'
     ConstraintDescription: 'Must be a valid SSH keypair'
-  SandboxSubnet:
+  WordpressSubnet:
     Type: AWS::EC2::Subnet::Id
     Description: 'Subnet to launch the instance into'
   InstanceName:
@@ -100,7 +100,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Open Ports 22 and 80
-      VpcId: !Ref SandboxVPC
+      VpcId: !Ref WordpressVPC
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: '22'
@@ -293,7 +293,7 @@ Resources:
       KeyName: !Ref SSHKey
       SecurityGroupIds: 
         - !Ref WPSecurityGroup
-      SubnetId: !Ref SandboxSubnet
+      SubnetId: !Ref WordpressSubnet
       Tags:
         - Key: Name
           Value: !Ref InstanceName
