@@ -45,6 +45,9 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     Description: 'SSH keypair name for access to EC2 instance'
     ConstraintDescription: 'Must be a valid SSH keypair'
+  WordpressSubnet:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet to launch the instance into
   InstanceName:
     Type: String
     Description: 'Tag name for the WordPress EC2 instance'
