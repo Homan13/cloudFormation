@@ -38,13 +38,13 @@ Parameters:
     - m5.large
     ConstraintDescription: 'Must be a valid EC2 instance type.'
     Default: t3.small
+  WPSecurityGroup:
+   Type: AWS::EC2::SecurityGroup::Id
+   Description: EC2 security group to attach to instance
   SSHKey:
     Type: AWS::EC2::KeyPair::KeyName
     Description: 'SSH keypair name for access to EC2 instance'
     ConstraintDescription: 'Must be a valid SSH keypair'
-  WordpressSubnet:
-    Type: AWS::EC2::Subnet::Id
-    Description: 'Subnet to launch the instance into'
   InstanceName:
     Type: String
     Description: 'Tag name for the WordPress EC2 instance'
@@ -110,7 +110,6 @@ Resources:
         FromPort: '80'
         ToPort: '80'
         CidrIp: 0.0.0.0/0
-
   WPInstance:
     Type: 'AWS::EC2::Instance'
     Metadata:
