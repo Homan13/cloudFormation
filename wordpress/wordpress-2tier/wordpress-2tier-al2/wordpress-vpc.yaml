@@ -1,0 +1,203 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation stack that creates a VPC and all coresponding components
+
+Parameters:
+  VPCCIDR:
+    Type: String
+    Description: IPv4 CIDR range to allocate to Wordpress VPC - value inherited from parent stack
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: wordpress-vpc
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+      - Key: Name
+        Value: wordpress-vpc-igw
+      - Key: Managed By
+        Value: !Sub ${AWS::StackName}
+  InternetGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  RTBPublic: 
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: wordpress-vpc-rtb-public
+      - Key: Managed By
+        Value: !Sub ${AWS::StackName}
+  DefaultPublicRoute: 
+    Type: 'AWS::EC2::Route'
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId:
+        Ref: RTBPublic
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId:
+        Ref: InternetGateway
+  RTBAssociationPublic1:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetPublic1
+      RouteTableId:
+        Ref: RTBPublic
+  RTBAssociationPublic2:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetPublic2
+      RouteTableId:
+        Ref: RTBPublic
+  RTBAssociationPublic3:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetPublic3
+      RouteTableId:
+        Ref: RTBPublic
+  SubnetPrivate1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Select [ 0, !Cidr [ !GetAtt VPC.CidrBlock, 256, 8 ]] # create 1 /27 CIDR block for this subnet 5 = subnet bits = /27 network
+      Tags:
+        - Key: Name
+          Value: wordpress-vpc-subnet-private-1
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+  SubnetPrivate2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !Select [ 1, !Cidr [ !GetAtt VPC.CidrBlock, 256, 8 ]]
+      Tags:
+        - Key: Name
+          Value: wordpress-vpc-subnet-private-2
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+  SubnetPrivate3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      CidrBlock: !Select [ 2, !Cidr [ !GetAtt VPC.CidrBlock, 256, 8 ]]
+      Tags:
+        - Key: Name
+          Value: wordpress-vpc-subnet-private-3
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+  SubnetPublic1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Select [ 3, !Cidr [ !GetAtt VPC.CidrBlock, 256, 8 ]]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: wordpress-vpc-subnet-public-1
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+  SubnetPublic2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !Select [ 4, !Cidr [ !GetAtt VPC.CidrBlock, 256, 8 ]]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: wordpress-vpc-subnet-public-2
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+  SubnetPublic3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      CidrBlock: !Select [ 5, !Cidr [ !GetAtt VPC.CidrBlock, 256, 8 ]]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: wordpress-vpc-subnet-public-3
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Open Ports 22 and 80
+      GroupName: WordpressWebSG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: wordpress-vpc-sg-web
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS Security Group
+      GroupName: WordpressDBSG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 3306
+        ToPort: 3306
+        SourceSecurityGroupId: !Ref WebSecurityGroup
+      Tags:
+        - Key: Name
+          Value: vpc-wordpress-sg-db
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+
+Outputs:
+  WordpressDBSubnets:
+    Description: Subnet IDs for private database subnets
+    Value: !Join
+      - ','
+      - - !Ref SubnetPrivate1
+        - !Ref SubnetPrivate2
+        - !Ref SubnetPrivate3
+    Export:
+      Name: !Sub '${AWS::StackName}-DBSubnets'
+  WordpressWebSG:
+    Description: Web security group ID for export to web-tier stack
+    Value: !Ref WebSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-WebSG'
+  WordpressSecurityGroups:
+    Description: Database and web security group IDs for export to child stacks
+    Value: !Join
+      - ","
+      - - !Ref WebSecurityGroup
+        - !Ref DBSecurityGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroups'
+  WordpressWebSubnet1:
+    Description: Subnet ID for public web-tier subnet 1
+    Value: !Ref SubnetPublic1
+    Export:
+      Name: !Sub '${AWS::StackName}-WebSubnet1'

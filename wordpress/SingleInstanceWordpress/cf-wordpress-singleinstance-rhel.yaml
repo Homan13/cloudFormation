@@ -159,9 +159,9 @@ Resources:
               owner: 'root'
               group: 'root'
           commands:
-            01enable_cfn_hup:
+            01_enable_cfn_hup:
               command: systemctl enable cfn-hup.service
-            02start_cfn_hup:
+            02_start_cfn_hup:
               command: systemctl start cfn-hup.service
         install_packages:
           commands:
@@ -224,7 +224,7 @@ Resources:
               command: "tar -C /var/www/html/ -zxf latest.tar.gz --strip-components=1"
             03_chmod_wordpress:
               cwd: /var/www/html/
-              command: "chown -R apache:apache /var/www/html/"
+              command: "chown -R apache: /var/www/html/"
         config_wordpress:
           files:
             /tmp/create-wp-config:

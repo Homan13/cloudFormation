@@ -1,0 +1,239 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: 'Cloudformation stack that launches a single instance running the Wordpress stack on Ubuntu 22.04'
+Parameters:
+  RDSUserPwd:
+    Type: String
+    Description: Password for the Master RDS user - value inherited from parent stack
+  RDSName:
+    Type: String
+    Description: RDS Database name - value inherited from parent stack
+  RDSUser:
+    Type: String
+    Description: Master user name for the RDS instance - value inherited from parent stack
+  WordpressUser:
+    Type: String
+    Description: Wordpress username - value inherited from parent stack
+  WordpressPWD:
+    Type: String
+    Description: Wordpress database password - value inherited from parent stack
+  RDSEndpoint:
+    Type: String
+    Description: RDS database endpoint for EC2 to connect to - value inherited from parent stack
+  WordpressInstanceType:
+    Type: String
+    Description: EC2 instance type to launch Wordpress on - value inherited from parent stack
+  WordpressSecurityGroup:
+   Type: String
+   Description: EC2 security group to attach to instance - value inherited from parent stack
+  WordpressSSHKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: SSH keypair name for access to EC2 instance - value inherited from parent stack
+  WordpressSubnet1:
+    Type: String
+    Description: Subnet to launch the instance into - value inherited from parent stack
+    
+Mappings:
+  AWSInstanceType2Arch:
+    m5.large:
+      Arch: HVM64
+    m5.medium:
+      Arch: HVM64
+    t3.medium:
+      Arch: HVM64
+    t3.micro:
+      Arch: HVM64
+    t3.nano:
+      Arch: HVM64
+    t3.small:
+      Arch: HVM64
+  AWSInstanceType2NATArch:
+    m5.medium:
+      Arch: NATHVM64
+    m5.large:
+      Arch: NATHVM64
+    t3.medium:
+      Arch: NATHVM64
+    t3.micro:
+      Arch: NATHVM64
+    t3.nano:
+      Arch: NATHVM64
+    t3.small:
+      Arch: NATHVM64
+  AWSRegionArch2AMI:
+    us-east-1:
+      HVM64: ami-0557a15b87f6559cf
+      HVMG2: ami-e998ea83
+      PV64: ami-5fb8c835
+    us-east-2:
+      HVM64: ami-00eeedc4036573771
+      # HVMG2: 
+      # PV64: 
+    us-west-1:
+      HVM64: ami-0d50e5e845c552faf
+      HVMG2: ami-943956f4
+      PV64: ami-56ea8636
+    us-west-2:
+      HVM64: ami-0735c191cf914754d
+      HVMG2: ami-315f4850
+      PV64: ami-d93622b8
+
+Resources:
+  WordpressInstance:
+    Type: 'AWS::EC2::Instance'
+    Metadata:
+      'AWS::CloudFormation::Init':
+        configSets:
+          wordpress_setup:
+            - config_cfn
+            - install_packages
+            - install_wordpress
+            - config_wordpress
+            - wordpress_salts
+        config_cfn:
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Sub |
+                [main]
+                stack=${AWS::StackName}
+                region=${AWS::Region}
+                interval=1
+                verbose=true
+              mode: '000400'
+              owner: 'root'
+              group: 'root'
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.WordpressInstance.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource WordpressInstance --region ${AWS::Region}
+                runas=root
+              mode: '000400'
+              owner: 'root'
+              group: 'root'
+            /lib/systemd/system/cfn-hup.service:
+              content: !Sub |
+                [Unit]
+                Description=cfn-hup daemon
+                [Service]
+                Type=simple
+                ExecStart=/usr/local/bin/cfn-hup
+                Restart=always
+                [Install]
+                WantedBy=multi-user.target
+          commands:
+            01_enable_cfn_hup:
+              command: systemctl enable cfn-hup.service
+            02_start_cfn_hup:
+              command: systemctl start cfn-hup.service
+        install_packages:
+          commands:
+            01_install_packages:
+              command: "apt install lynx apache2 mariadb-client-10.6 -y"
+            02_remove_indexhtml:
+              command: "rm -rf /var/www/html/index.html"
+            03_install_php:
+              command: "apt install php8.1 -y && apt install php-bz2 php-mysql php-curl php-gd php-intl php-common php-mbstring php-xml -y"
+            04_enable_httpd:
+              command: "systemctl enable apache2 && systemctl start apache2"
+        install_wordpress:
+          commands:
+            01_download_wordpress:
+              cwd: /tmp/
+              command: "wget http://wordpress.org/latest.tar.gz"
+            02_extract_wordpress:
+              cwd: /tmp/
+              command: "tar -C /var/www/html/ -zxf latest.tar.gz --strip-components=1"
+            03_chmod_wordpress:
+              cwd: /var/www/html/
+              command: "chown -R www-data:www-data /var/www/html/"
+            04_restart_apache:
+              cwd: /var/www/html/
+              command: systemctl restart apache2
+        config_wordpress:
+          files:
+            /tmp/create-wp-config:
+              content: !Sub |
+                #!/bin/bash -xe
+                mv /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
+                sed -i "s/'database_name_here'/'${RDSName}'/g" /var/www/html/wp-config.php
+                sed -i "s/'username_here'/'${RDSUser}'/g" /var/www/html/wp-config.php
+                sed -i "s/'password_here'/'${RDSUserPwd}'/g" /var/www/html/wp-config.php
+                sed -i "s/'localhost'/'${RDSEndpoint}'/g" /var/www/html/wp-config.php
+              mode: '000500'
+              owner: root
+              group: root
+            /tmp/create-htaccess:
+              content: !Sub |
+                #!/bin/bash -xe
+                cat << EOF >> /var/www/html/.htaccess
+                # BEGIN WordPress
+                <IfModule mod_rewrite.c>
+                RewriteEngine On
+                RewriteBase /
+                RewriteRule ^index.php$ - [L]
+                RewriteCond %{REQUEST_FILENAME} !-f
+                RewriteCond %{REQUEST_FILENAME} !-d
+                RewriteRule . /index.php [L]
+                </IfModule>
+                # END WordPress
+                EOF
+              mode: '000500'
+              owner: root
+              group: root
+          commands:
+            01_create_wp_config:
+              cwd: /tmp/
+              command: /tmp/create-wp-config
+            02_create_ht_access:
+              cwd: /tmp/
+              command: /tmp/create-htaccess
+        wordpress_salts:
+          files:
+            /tmp/wordpress-salts:
+              content: !Sub |
+                #!/bin/bash -xe
+                grep -A50 'table_prefix' /var/www/html/wp-config.php > /tmp/wp-tmp-config
+                sed -i '/**#@/,/$p/d' /var/www/html/wp-config.php
+                lynx --dump -width 200 https://api.wordpress.org/secret-key/1.1/salt/ >> /var/www/html/wp-config.php
+                cat /tmp/wp-tmp-config >> /var/www/html/wp-config.php && rm /tmp/wp-tmp-config -f
+                mysql -h ${RDSEndpoint} -u ${RDSUser} --password='${RDSUserPwd}' -e "CREATE USER '${WordpressUser}'@'${RDSName}' IDENTIFIED BY '${WordpressPWD}';"
+                mysql -h ${RDSEndpoint} -u ${RDSUser} --password='${RDSUserPwd}' -e "GRANT ALL PRIVILEGES ON wordpress.* TO '${WordpressUser}'@'${RDSName}';"
+                mysql -h ${RDSEndpoint} -u ${RDSUser} --password='${RDSUserPwd}' -e "FLUSH PRIVILEGES;"
+              mode: '000500'
+              owner: root
+              group: root
+          commands:
+            01_wordpress_salts:
+              cwd: /tmp/
+              command: /tmp/wordpress-salts
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    Properties:
+      InstanceType: !Ref WordpressInstanceType
+      ImageId: !FindInMap [AWSRegionArch2AMI, !Ref 'AWS::Region', !FindInMap [AWSInstanceType2Arch, !Ref WordpressInstanceType, Arch]]
+      KeyName: !Ref WordpressSSHKey
+      SecurityGroupIds: 
+        - !Ref WordpressSecurityGroup
+      SubnetId: !Ref WordpressSubnet1
+      Tags:
+        - Key: Name
+          Value: ec2-wordpress-web
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          apt update -y && apt upgrade -y
+          apt-get -y install python3-pip
+          mkdir -p /opt/aws/
+          pip3 install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+          ln -s /usr/local/init/ubuntu/cfn-hup /etc/init.d/cfn-hup
+          /usr/local/bin/cfn-init -v --stack ${AWS::StackId} --resource WordpressInstance --configsets wordpress_setup --region ${AWS::Region}
+          /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource WordpressInstance --region ${AWS::Region}
+
+Outputs:
+  WebsiteURL:
+    Description: WordPress Website
+    Value: !Sub "http://${WordpressInstance.PublicDnsName}"

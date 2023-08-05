@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Full stack (EC2 with RDS) Wordpress deployment. This template launches three stacks; VPC, Web Tier and DB Tier
+
+Parameters:
+  CIDRRange:
+    Type: String
+    Description: IPv4 CIDR range to allocate to Wordpress VPC
+    Default: 10.0.0.0/16
+  TemplateBucket:
+    Type: String
+    Description: S3 Bucket stack templates are stored
+    Default: kmhoman-cf-testing-us-east-1
+  DBClass:
+    Type: String
+    Description: Database instance class to run RDS database on
+    AllowedValues:
+      - db.t3.micro
+      - db.t3.small
+      - db.t3.medium
+      - db.t3.large
+      - db.m5.large
+      - db.m5.xlarge
+    ConstraintDescription: Must be of a valid RDS instance class
+    Default: db.t3.small
+  DBName:
+    Type: String
+    Description: RDS Database name
+    Default: wordpress
+  DBEngine:
+    Type: String
+    Description: Database engine to run on this RDS instance
+    AllowedValues:
+    - mariadb
+    - mysql
+    - postgres
+    ConstraintDescription: Must use a valid database engine
+    Default: mariadb
+  DBUser:
+    Type: String
+    Description: Database user name for the RDS instance
+    Default: rdsuser
+  DBUserPWD:
+    Type: String
+    Description: Password for the Master RDS user
+    NoEcho: 'true'
+    MinLength: '11'
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: Must only contain upper and lowercase letters, numbers and contain a minimum of 11 characters
+  DBAllocatedStorage:
+    Type: Number
+    Description: Database storage allocation in GBs
+    MinValue: 20
+    MaxValue: 65536
+    Default: 30
+  DBMaxStorage:
+    Type: Number
+    Description: Storage limit in GBS that RDS can scale to
+    MinValue: 20
+    MaxValue: 65536
+    ConstraintDescription: Value must be between 20 and 65536 GBs
+    Default: 50
+  DBBackUpRetentionPeriod:
+    Type: Number
+    Description: Number of days that RDS automated backups are retained
+    MinValue: 1
+    MaxValue: 35
+    ConstraintDescription: Value must be between 1 and 35 days
+    Default: 1
+  DBStorageType:
+    Type: String
+    Description: Storage type to use with this RDS instance
+    AllowedValues:
+    - gp2
+    - gp3
+    ConstraintDescription: Must be of a valid storage volume type
+    Default: gp3
+  WebUser:
+    Type: String
+    Description: Wordpress username
+    Default: wpuser
+  WPPWD:
+    Type: String
+    Description: Wordpress database password
+    NoEcho: 'true'
+    MinLength: '11'
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: Must only contain upper and lowercase letters, numbers and contain a minimum of 11 characters
+  WebInstanceType:
+    Type: String
+    Description: EC2 instance type to launch Wordpress on
+    AllowedValues:
+    - t3.nano
+    - t3.micro
+    - t3.small
+    - t3.medium
+    - m5.medium
+    - m5.large
+    ConstraintDescription: Must be a valid EC2 instance type
+    Default: t3.small
+  WebSSHKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: SSH keypair name for access to EC2 instance
+    ConstraintDescription: Must be a valid SSH keypair
+
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${TemplateBucket}/wordpress-vpc.yaml
+      Parameters:
+        VPCCIDR: !Ref CIDRRange
+  DBTierStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${TemplateBucket}/wordpress-rds.yaml
+      Parameters:
+        RDSSubnets: !GetAtt VPCStack.Outputs.WordpressDBSubnets
+        RDSInstanceClass: !Ref DBClass
+        RDSName: !Ref DBName
+        RDSEngine: !Ref DBEngine
+        RDSUser: !Ref DBUser
+        RDSUserPwd: !Ref DBUserPWD
+        RDSAllocatedStorage: !Ref DBAllocatedStorage
+        RDSMaxStorage: !Ref DBMaxStorage
+        RDSRetentionPeriod: !Ref DBBackUpRetentionPeriod
+        WordpressSecurityGroups: !GetAtt VPCStack.Outputs.WordpressSecurityGroups
+        RDSStorageType: !Ref DBStorageType
+  WebTierStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${TemplateBucket}/wordpress-ec2.yaml
+      Parameters:
+        RDSUserPwd: !Ref DBUserPWD
+        RDSName: !Ref DBName
+        RDSUser: !Ref DBUser
+        WordpressUser: !Ref WebUser
+        WordpressPWD: !Ref WPPWD
+        RDSEndpoint: !GetAtt DBTierStack.Outputs.RDSEndpointAddress
+        WordpressInstanceType: !Ref WebInstanceType
+        WordpressSecurityGroup: !GetAtt VPCStack.Outputs.WordpressWebSG
+        WordpressSSHKey: !Ref WebSSHKey
+        WordpressSubnet1: !GetAtt VPCStack.Outputs.WordpressWebSubnet1

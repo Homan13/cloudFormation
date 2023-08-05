@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation stack that creates an RDS Database
+
+Parameters:
+  RDSSubnets:
+    Type: CommaDelimitedList
+    Description: Subnet IDs for private database subnets for RDS subnet group - value inherited from parent stack
+  RDSInstanceClass:
+    Type: String
+    Description: Instance type to run RDS database on - value inherited from parent stack
+  RDSName:
+    Type: String
+    Description: Database engine to run on this RDS instance - value inherited from parent stack
+  RDSEngine:
+    Type: String
+    Description: Database engine to run on this RDS instance - value inherited from parent stack
+  RDSUser:
+    Type: String
+    Description: Master user name for the RDS instance - value inherited from parent stack
+  RDSUserPwd:
+    Type: String
+    Description: Password for the Master RDS user - value inherited from parent stack
+  RDSAllocatedStorage:
+    Type: Number
+    Description: Storage allocated to the database in GB - value inherited from parent stack
+  RDSMaxStorage:
+    Type: Number
+    Description: Maximum size RDS storage can scale to in GB - value inherited from parent stack
+  RDSRetentionPeriod:
+    Type: Number
+    Description: Number of days that RDS automated backups are retained - value inherited from parent stack
+  WordpressSecurityGroups:
+    Type: CommaDelimitedList
+    Description: Security Group to attach to RDS instance - value enherited from parent stack
+  RDSStorageType:
+    Type: String
+    Description: Storage type to use with this RDS instance - value enherited from parent stack
+
+Resources:
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Wordpress RDS subnet group
+      DBSubnetGroupName: wordpresssubnetgroup
+      SubnetIds:
+        - !Select [0, !Ref RDSSubnets]
+        - !Select [1, !Ref RDSSubnets]
+        - !Select [2, !Ref RDSSubnets]
+      Tags:
+        - Key: Name
+          Value: rds-wordpress-subnet-group
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+  RDSDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: !Ref RDSInstanceClass
+      DBName: !Ref RDSName
+      Engine: !Ref RDSEngine
+      MasterUsername: !Ref RDSUser
+      MasterUserPassword: !Ref RDSUserPwd
+      PubliclyAccessible: false
+      AllocatedStorage: !Ref RDSAllocatedStorage
+      MaxAllocatedStorage: !Ref RDSMaxStorage
+      BackupRetentionPeriod: !Ref RDSRetentionPeriod
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      StorageType: !Ref RDSStorageType
+      VPCSecurityGroups:
+        - !Select [1, !Ref WordpressSecurityGroups]
+      Tags:
+        - Key: Name
+          Value: rds-wordpress-db
+        - Key: Managed By
+          Value: !Sub ${AWS::StackName}
+
+
+Outputs:
+  RDSEndpointAddress:
+    Description: RDS endpoint address for EC2 instance to connect to
+    Value: !GetAtt RDSDB.Endpoint.Address
