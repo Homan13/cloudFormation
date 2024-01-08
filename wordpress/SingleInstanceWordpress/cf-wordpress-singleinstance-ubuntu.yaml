@@ -162,15 +162,23 @@ Resources:
               command: systemctl start cfn-hup.service
         install_packages:
           commands:
-            01_install_packages:
-              command: "apt install lynx apache2 mariadb-server-10.6 mariadb-client-10.6 -y"
-            02_remove_indexhtml:
+            01_download_mariadb_repo:
+              command: "curl -fsSL http://mirror.mariadb.org/PublicKey_v2 | sudo gpg --dearmor | sudo tee /usr/share/keyrings/mariadb.gpg > /dev/null"
+            02_update_mariadb_repo:
+              command: "echo \"deb [arch=amd64,arm64,ppc64el signed-by=/usr/share/keyrings/mariadb.gpg] http://mirror.mariadb.org/repo/10.11/ubuntu/ $(lsb_release -cs) main\" | sudo tee /etc/apt/sources.list.d/mariadb.list"
+            03_install_packages:
+              command: "apt update && apt install apache2 apt-transport-https ca-certificates curl dirmngr lynx mariadb-server mariadb-client software-properties-common -y"
+            04_remove_indexhtml:
               command: "rm -rf /var/www/html/index.html"
-            03_install_php:
-              command: "apt install php8.1 -y && apt install php-bz2 php-mysql php-curl php-gd php-intl php-common php-mbstring php-xml -y"
-            04_enable_httpd:
+            05_install_onjrej_php_repo:
+              command: "add-apt-repository ppa:ondrej/php -y && apt update"
+            06_install_php:
+              command: "apt install php8.2 -y && apt install php8.2-bz2 php8.2-mysql php8.2-curl php8.2-gd php8.2-intl php8.2-common php8.2-mbstring php8.2-xml -y"
+            07_update_httpd.conf:
+              command: "sed -i '0,/AllowOverride\ None/! {0,/AllowOverride\ None/ s/AllowOverride\ None/AllowOverride\ All/}' /etc/apache2/apache2.conf"
+            08_enable_httpd:
               command: "systemctl enable apache2 && systemctl start apache2"
-            05_enable_mariadb:
+            09_enable_mariadb:
               command: "systemctl enable mariadb && systemctl start mariadb"
         mysql_secure_installation:
           files:

@@ -38,9 +38,9 @@ Parameters:
     - m5.large
     ConstraintDescription: 'Must be a valid EC2 instance type.'
     Default: t3.small
-  WPSecurityGroup:
-   Type: AWS::EC2::SecurityGroup::Id
-   Description: EC2 security group to attach to instance
+  # WordpressSecurityGroup:
+   # Type: AWS::EC2::SecurityGroup::Id
+   # Description: EC2 security group to attach to instance
   SSHKey:
     Type: AWS::EC2::KeyPair::KeyName
     Description: 'SSH keypair name for access to EC2 instance'
@@ -158,14 +158,22 @@ Resources:
         install_packages:
           commands:
             01_enable_amazon_linux_extras:
-              command: "amazon-linux-extras enable mariadb10.5 php8.1 && yum clean metadata"
-            02_install_packages:
-              command: "yum install lynx httpd mariadb mariadb-server jemalloc -y"
-            03_install_php:
-              command: "amazon-linux-extras install php8.1 -y && yum install php-bz2 php-mysqli php-curl php-gd php-intl php-common php-mbstring php-xml -y"
-            04_enable_httpd:
+              command: "amazon-linux-extras enable php8.2 && yum clean metadata"
+            02_download_mariadb_repo:
+              command: "curl -LsS -O https://downloads.mariadb.com/MariaDB/mariadb_repo_setup"
+            03_enable_mariadb_repo:
+              command: "bash mariadb_repo_setup --os-type=rhel  --os-version=7 --mariadb-server-version=10.11 && rm -rf /var/cache/yum && yum makecache"
+            04_install_epel_repo:
+              command: "amazon-linux-extras install epel -y"
+            05_install_packages:
+              command: "yum install lynx httpd MariaDB-server MariaDB-client jemalloc -y"
+            06_install_php:
+              command: "amazon-linux-extras install php8.2 -y && yum install php-bz2 php-mysqli php-curl php-gd php-intl php-common php-mbstring php-xml -y"
+            07_update_httpd.conf:
+              command: "sed -i '0,/AllowOverride\ None/! {0,/AllowOverride\ None/ s/AllowOverride\ None/AllowOverride\ All/}' /etc/httpd/conf/httpd.conf"
+            08_enable_httpd:
               command: "systemctl enable httpd && systemctl start httpd"
-            05_enable_mariadb:
+            09_enable_mariadb:
               command: "systemctl enable mariadb && systemctl start mariadb"
         mysql_secure_installation:
           files:

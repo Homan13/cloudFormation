@@ -159,9 +159,11 @@ Resources:
               command: "dnf install lynx httpd mariadb105 mariadb105-server -y"
             02_install_php:
               command: "dnf install php -y && dnf install php-bz2 php-mysqli php-curl php-gd php-intl php-common php-mbstring php-xml -y"
-            03_enable_httpd:
+            03_update_httpd.conf:
+              command: "sed -i '0,/AllowOverride\ None/! {0,/AllowOverride\ None/ s/AllowOverride\ None/AllowOverride\ All/}' /etc/httpd/conf/httpd.conf"
+            04_enable_httpd:
               command: "systemctl enable httpd && systemctl start httpd"
-            04_enable_mariadb:
+            05_enable_mariadb:
               command: "systemctl enable mariadb && systemctl start mariadb"
         mysql_secure_installation:
           files:

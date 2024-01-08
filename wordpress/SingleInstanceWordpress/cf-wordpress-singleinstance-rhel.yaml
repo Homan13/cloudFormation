@@ -167,11 +167,17 @@ Resources:
           commands:
             01_install_packages:
               command: "dnf install lynx wget httpd mariadb mariadb-server -y"
-            02_install_php:
-              command: "dnf module reset php && dnf module enable php:8.1 -y && dnf install php -y && dnf install php-bz2 php-mysqli php-curl php-gd php-intl php-common php-mbstring php-xml -y"
-            03_enable_httpd:
+            02_enable_epel_repo:
+              command: "dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y"
+            03_enable_remi_repo:
+              command: "dnf install http://rpms.remirepo.net/enterprise/remi-release-9.rpm -y"
+            04_install_php:
+              command: "dnf module reset php -y && dnf module install php:remi-8.2 -y && dnf install php -y && dnf install php-bz2 php-mysqli php-curl php-gd php-intl php-common php-mbstring php-xml -y"
+            05_update_httpd.conf:
+              command: "sed -i '0,/AllowOverride\ None/! {0,/AllowOverride\ None/ s/AllowOverride\ None/AllowOverride\ All/}' /etc/httpd/conf/httpd.conf"
+            06_enable_httpd:
               command: "systemctl enable httpd && systemctl start httpd"
-            04_enable_mariadb:
+            07_enable_mariadb:
               command: "systemctl enable mariadb && systemctl start mariadb"
         mysql_secure_installation:
           files:
