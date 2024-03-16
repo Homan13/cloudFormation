@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: 'Cloudformation stack that launches a single instance running the Wordpress stack on Amazon Linux 2'
+Description: 'Cloudformation stack that launches a single instance running the Wordpress stack on Red Hat Enterprise Linux (RHEL) 9'
 Parameters:
   RDSUserPwd:
     Type: String
@@ -61,19 +61,19 @@ Mappings:
       Arch: NATHVM64
   AWSRegionArch2AMI:
     us-east-1:
-      HVM64: ami-0dfcb1ef8550277af
+      HVM64: ami-0c9978668f8d55984
       HVMG2: ami-e998ea83
       PV64: ami-5fb8c835
     us-east-2:
-      HVM64: ami-0cc87e5027adcdca8
+      HVM64: ami-0521a1ab6cb98215d
       # HVMG2: 
       # PV64: 
     us-west-1:
-      HVM64: ami-00569e54da628d17c
+      HVM64: ami-02c61cf220bd1158e
       HVMG2: ami-943956f4
       PV64: ami-56ea8636
     us-west-2:
-      HVM64: ami-0f1a5f5ada0e7da53
+      HVM64: ami-0edab8d70528476d3
       HVMG2: ami-315f4850
       PV64: ami-d93622b8
 
@@ -111,24 +111,35 @@ Resources:
               mode: '000400'
               owner: 'root'
               group: 'root'
-          services:
-            sysvinit:
-              cfn-hup:
-                enabled: "true"
-                ensureRunning: "true"
-                files:
-                  - /etc/cfn/cfn-hup.conf
-                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+            /lib/systemd/system/cfn-hup.service:
+              content: !Sub |
+                [Unit]
+                Description=cfn-hup daemon
+                [Service]
+                Type=simple
+                ExecStart=/usr/local/bin/cfn-hup
+                Restart=always
+                [Install]
+                WantedBy=multi-user.target
+          commands:
+            01_enable_cfn_hup:
+              command: systemctl enable cfn-hup.service
+            02_start_cfn_hup:
+              command: systemctl start cfn-hup.service
         install_packages:
           commands:
-            01_enable_amazon_linux_extras:
-              command: "amazon-linux-extras enable mariadb10.5 php8.1 && yum clean metadata"
-            02_install_packages:
-              command: "yum install lynx httpd mariadb jemalloc -y"
-            03_install_php:
-              command: "amazon-linux-extras install php8.1 -y && yum install php-bz2 php-mysqli php-curl php-gd php-intl php-common php-mbstring php-xml -y"
-            04_enable_httpd:
+            01_install_packages:
+              command: "dnf install lynx wget httpd mariadb -y"
+            02_enable_epel_repo:
+              command: "dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y"
+            03_enable_remi_repo:
+              command: "dnf install http://rpms.remirepo.net/enterprise/remi-release-9.rpm -y"
+            04_install_php:
+              command: "dnf module reset php -y && dnf module install php:remi-8.2 -y && dnf install php -y && dnf install php-bz2 php-mysqli php-curl php-gd php-intl php-common php-mbstring php-xml -y"
+            05_enable_httpd:
               command: "systemctl enable httpd && systemctl start httpd"
+            06_disable_selinux:
+              command: "setenforce 0"
         install_wordpress:
           commands:
             01_download_wordpress:
@@ -139,7 +150,7 @@ Resources:
               command: "tar -C /var/www/html/ -zxf latest.tar.gz --strip-components=1"
             03_chmod_wordpress:
               cwd: /var/www/html/
-              command: "chown -R apache:apache /var/www/html/"
+              command: "chown -R apache: /var/www/html/"
         config_wordpress:
           files:
             /tmp/create-wp-config:
@@ -215,9 +226,11 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          yum update -y aws-cfn-bootstrap
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource WordpressInstance --configsets wordpress_setup --region ${AWS::Region}
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource WordpressInstance --region ${AWS::Region}
+          dnf update -y
+          yum -y install python3-pip
+          pip3 install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+          /usr/local/bin/cfn-init -v --stack ${AWS::StackId} --resource WordpressInstance --configsets wordpress_setup --region ${AWS::Region}
+          /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource WordpressInstance --region ${AWS::Region}
 
 Outputs:
   WebsiteURL:

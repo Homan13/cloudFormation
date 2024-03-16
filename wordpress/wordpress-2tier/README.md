@@ -6,13 +6,13 @@ A collection of CloudFormation templates that provision the entire stack; networ
 
 This repository contains the following project directories;
 
-**wordpress-2tier-al2** - This stack will launch a single Amazon Linux 2 (AL2) Elastic Compute Cloud (EC2) instance that runs your web tier (Apache, PHP and Wordpress) and a single Amazon Relational Database Service (RDS) instance that runs your datbase tier. Additionally, a new VPC with associated internet gateway, public and private subnets, route tables and security groups will be created that stack resources will be launched into. This stack is currently running the following software versions; Wordpress 6.2.x, Apache 2.4.x, MariaDB 10.5.x and PHP 8.1.x.
+**wordpress-2tier-al2** - This stack will launch a single Amazon Linux 2 (AL2) Elastic Compute Cloud (EC2) instance that runs your web tier (Apache, PHP and Wordpress) and a single Amazon Relational Database Service (RDS) instance that runs your datbase tier. Additionally, a new VPC with associated internet gateway, public and private subnets, route tables and security groups will be created that stack resources will be launched into. This stack is currently running the following software versions; Wordpress 6.4.x, Apache 2.4.x, MariaDB 10.11.x and PHP 8.2.x.
 
-**wordpress-2tier-al2023** - This stack will launch a single Amazon Linux 2023 (AL2023) Elastic Compute Cloud (EC2) instance that runs your web tier (Apache, PHP and Wordpress) and a single Amazon Relational Database Service (RDS) instance that runs your datbase tier. Additionally, a new VPC with associated internet gateway, public and private subnets, route tables and security groups will be created that stack resources will be launched into. This stack is currently running the following software versions; Wordpress 6.2.x, Apache 2.4.x, MariaDB 10.5.x and PHP 8.1.x.
+**wordpress-2tier-al2023** - This stack will launch a single Amazon Linux 2023 (AL2023) Elastic Compute Cloud (EC2) instance that runs your web tier (Apache, PHP and Wordpress) and a single Amazon Relational Database Service (RDS) instance that runs your datbase tier. Additionally, a new VPC with associated internet gateway, public and private subnets, route tables and security groups will be created that stack resources will be launched into. This stack is currently running the following software versions; Wordpress 6.4.x, Apache 2.4.x, MariaDB 10.5.x and PHP 8.2.x.
 
-**wordpress-2tier-rhel** - Coming soon
+**wordpress-2tier-rhel** - This stack will launch a single Amazon Linux 2023 (AL2023) Elastic Compute Cloud (EC2) instance that runs your web tier (Apache, PHP and Wordpress) and a single Amazon Relational Database Service (RDS) instance that runs your datbase tier. Additionally, a new VPC with associated internet gateway, public and private subnets, route tables and security groups will be created that stack resources will be launched into. This stack is currently running the following software versions; Wordpress 6.4.x, Apache 2.4.x, MariaDB 10.5.x and PHP 8.2.x.
 
-**wordpress-2-tier-ubuntu** - This stack will launch a single Ubuntu 22.04 Elastic Compute Cloud (EC2) instance that runs your web tier (Apache, PHP and Wordpress) and a single Amazon Relational Database Service (RDS) instance that runs your datbase tier. Additionally, a new VPC with associated internet gateway, public and private subnets, route tables and security groups will be created that stack resources will be launched into. This stack is currently running the following software versions; Wordpress 6.2.x, Apache 2.4.x, MariaDB 10.5.x and PHP 8.1.x.
+**wordpress-2-tier-ubuntu** - This stack will launch a single Ubuntu 22.04 Elastic Compute Cloud (EC2) instance that runs your web tier (Apache, PHP and Wordpress) and a single Amazon Relational Database Service (RDS) instance that runs your datbase tier. Additionally, a new VPC with associated internet gateway, public and private subnets, route tables and security groups will be created that stack resources will be launched into. This stack is currently running the following software versions; Wordpress 6.4.x, Apache 2.4.x, MariaDB 10.11.x and PHP 8.2.x.
 
 ### Prerequisites
 
@@ -37,6 +37,7 @@ Coming soon
 * [CloudFormation](https://docs.aws.amazon.com/cloudformation/index.html)
 * [MariaDB](https://mariadb.org/)
 * [PHP](https://www.php.net/)
+* [Red Hat Enterprise Linux](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux)
 * [Ubuntu](https://ubuntu.com/)
 * [Wordpress](https://wordpress.com/)
 
